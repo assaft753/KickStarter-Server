@@ -4,8 +4,6 @@ var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
 
-var indexRouter = require('./routes/index');
-var usersRouter = require('./routes/users');
 var mainRouter = require('./routes/main');
 var mediaRouter = require('./routes/media');
 var projectRouter = require('./routes/project');
@@ -30,8 +28,6 @@ app.use(function(req, res, next) {
   next();
 });
 
-app.use('/', indexRouter);
-app.use('/users', usersRouter);
 app.use('/main', mainRouter);
 app.use('/media', mediaRouter);
 app.use('/project', projectRouter);

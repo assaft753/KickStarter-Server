@@ -6,11 +6,13 @@ var db = require('../model/db');
 var promise_db = require('../model/promise-db');
 
 var router = express.Router();
+var counter = 0;
 
 const filename = (req, file, cb) => {
     var arr = file.originalname.split('.');
     var format = arr[arr.length - 1];
-    cb(null, file.fieldname + '-' + Date.now() + '.' + format);
+    counter++;
+    cb(null, file.fieldname + '-' + Date.now() + counter + "" + '.' + format.toLowerCase());
 };
 
 var image_storage = multer.diskStorage({
@@ -59,8 +61,10 @@ router.post('/upload/secondary', image_upload.array("image"), (req, res, next) =
     const project_id = req.body['project_id'];
     const files = req.files;
     try {
+        var count = 1;
         files.forEach(file => {
             promise_db.query(media_queries.add_image_of_project, [project_id, file.filename, 0]);
+            count++;
         });
         res.send('secondary images added completed');
     }
@@ -98,27 +102,44 @@ router.post('/update/primary', image_upload.single("image"), (req, res, next) =>
 router.post('/update/video', video_upload.single("video"), (req, res, next) => {
     const project_id = req.body['project_id'];
     const file_name = req.file.filename;
-    db.query(media_queries.update_video_of_project, [file_name, project_id], (err, result, field) => {
-        if (err) {
-            res.status(400).send(err);
-        }
-        else {
-            res.send({ video_name: file_name, result: result });
-        }
-    });
+    try {
+        promise_db.query(media_queries.delete_video_of_project, [project_id]);
+        const result = promise_db.query(media_queries.add_video_of_project, [project_id, file_name]);
+        res.send(result);
+    }
+    catch (error) {
+        res.status(400).send(error);
+    }
 
 });
 
+router.post('/update/secondary', image_upload.array("image"), (req, res, next) => {
+    const project_id = req.body['project_id'];
+    const files = req.files;
+    try {
+        promise_db.query(media_queries.delete_all_secondary_image_of_project, [project_id]);
+        console.log("enter")
+        var count = 1;
+        files.forEach(file => {
+            promise_db.query(media_queries.add_image_of_project, [project_id, file.filename, 0]);
+            count++;
+        });
+        res.send();
+    }
+    catch (error) {
+        res.status(400).send(error);
+    }
+});
+
 router.post('/delete/secondary', (req, res, next) => {
-    const image_info = req.body;
-    db.query(media_queries.delete_secondary_image_of_project, [image_info['project_id'], image_info['image_name']], (err, result) => {
-        if (err) {
-            res.status(400).send(err);
-        }
-        else {
-            res.send(result);
-        }
-    });
+    const project_id = image_info['project_id'];
+    try {
+        promise_db.query(media_queries.delete_all_secondary_image_of_project, [project_id]);
+        es.send();
+    }
+    catch (error) {
+        res.status(400).send(error);
+    }
 });
 
 router.post('/delete/video', (req, res, next) => {
